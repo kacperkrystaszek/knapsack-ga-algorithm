@@ -1,1 +1,1 @@
-Genetic algorithm implementation for knapsack problem 
+Genetic algorithm implementation for knapsack problem. Compile all .cpp files in src directory.
