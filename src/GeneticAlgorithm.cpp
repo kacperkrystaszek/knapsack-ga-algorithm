@@ -84,6 +84,8 @@ void GeneticAlgorithm::mutate(KnapsackGA::Solution& chromosome){
     std::uniform_real_distribution<> probabilityDist(0.0, 1.0);
     for (int i = 0; i < this->chromosomeLength; i++)
     {
+        if(probabilityDist(this->generator) >= this->mutationRate)
+            continue;
         chromosome[i] = !chromosome[i];
     }
 }
