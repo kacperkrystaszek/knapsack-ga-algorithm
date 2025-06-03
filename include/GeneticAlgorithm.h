@@ -3,6 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <fstream>
 #include "Item.h"
 #include "Knapsack.h"
 #include "KnapsackGA.h"
@@ -13,23 +14,23 @@ class GeneticAlgorithm{
         int populationSize;
         int chromosomeLength;
         double mutationRate;
-        double crossoverRate;
+        int tournamentSize;
         int maxGenerations;
         std::mt19937 generator;
 
         std::vector<KnapsackGA::Solution> generateInitialPopulation();
-        int calculateFitness(KnapsackGA::Solution& chromosome);
         KnapsackGA::Solution tournamentSelection(std::vector<KnapsackGA::Solution>& population);
         std::pair<KnapsackGA::Solution, KnapsackGA::Solution> crossover(KnapsackGA::Solution& parent1, KnapsackGA::Solution& parent2);
         void mutate(KnapsackGA::Solution& chromosome);
-
-    public:
+        
+        public:
         GeneticAlgorithm(
             Knapsack& knapsack,
             int populationSize = 100,
             double mutationRate = 0.01,
-            double crossoverRate = 0.7,
+            int tournamentSize = 5,
             int maxGenerations = 200
         );
-        std::pair<KnapsackGA::Solution, KnapsackGA::Solution> solve();
+        std::pair<KnapsackGA::Solution, KnapsackGA::Solution> solve(bool verbose=true, bool log=false);
+        int calculateFitness(KnapsackGA::Solution& chromosome);
 };

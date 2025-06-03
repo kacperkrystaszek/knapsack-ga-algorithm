@@ -4,14 +4,14 @@ GeneticAlgorithm::GeneticAlgorithm(
     Knapsack& knapsack,
     int populationSize,
     double mutationRate,
-    double crossoverRate,
+    int tournamentSize,
     int maxGenerations
 ) :
     knapsack(knapsack),
     populationSize(populationSize),
     chromosomeLength(knapsack.getItemCount()),
     mutationRate(mutationRate),
-    crossoverRate(crossoverRate),
+    tournamentSize(tournamentSize),
     maxGenerations(maxGenerations),
     generator(std::random_device{}())
 {};
@@ -45,11 +45,10 @@ int GeneticAlgorithm::calculateFitness(KnapsackGA::Solution& chromosome){
 
 KnapsackGA::Solution GeneticAlgorithm::tournamentSelection(std::vector<KnapsackGA::Solution>& population){
     std::uniform_int_distribution<> indexDist(0, this->populationSize - 1);
-    int tournamentSize = 5;
     KnapsackGA::Solution bestChromosome;
     int bestFitness = -1;
 
-    for (int i = 0; i < tournamentSize; i++)
+    for (int i = 0; i < this->tournamentSize; i++)
     {
         int index = indexDist(this->generator);
         KnapsackGA::Solution chromosome = population[index];
@@ -63,21 +62,17 @@ KnapsackGA::Solution GeneticAlgorithm::tournamentSelection(std::vector<KnapsackG
 }
 
 std::pair<KnapsackGA::Solution, KnapsackGA::Solution> GeneticAlgorithm::crossover(KnapsackGA::Solution& parent1, KnapsackGA::Solution& parent2){
-    std::uniform_real_distribution<> probabilityDist(0.0, 1.0);
     std::uniform_int_distribution<> pointDist(1, this->chromosomeLength);
 
-    if(probabilityDist(this->generator) < this->crossoverRate){
-        int point = pointDist(this->generator);
-        KnapsackGA::Solution child1 = parent1;
-        KnapsackGA::Solution child2 = parent2;
+    int point = pointDist(this->generator);
+    KnapsackGA::Solution child1 = parent1;
+    KnapsackGA::Solution child2 = parent2;
 
-        for (int i = point; i < this->chromosomeLength; i++)
-        {
-            std::swap(child1[i], child2[i]);
-        }
-        return {child1, child2};
+    for (int i = point; i < this->chromosomeLength; i++)
+    {
+        std::swap(child1[i], child2[i]);
     }
-    return {parent1, parent2};
+    return {child1, child2};
 }
 
 void GeneticAlgorithm::mutate(KnapsackGA::Solution& chromosome){
@@ -90,11 +85,12 @@ void GeneticAlgorithm::mutate(KnapsackGA::Solution& chromosome){
     }
 }
 
-std::pair<KnapsackGA::Solution, KnapsackGA::Solution> GeneticAlgorithm::solve(){
+std::pair<KnapsackGA::Solution, KnapsackGA::Solution> GeneticAlgorithm::solve(bool verbose, bool log){
     std::vector<KnapsackGA::Solution> population = this->generateInitialPopulation();
     KnapsackGA::Solution bestSolution;
     KnapsackGA::Solution bestLastGenSolution;
     int bestFitness = -1;
+    std::vector<int> convergence;
 
     for (int generation = 0; generation < this->maxGenerations; generation++)
     {
@@ -116,9 +112,11 @@ std::pair<KnapsackGA::Solution, KnapsackGA::Solution> GeneticAlgorithm::solve(){
         if(bestGenFitness > bestFitness){
             bestFitness = bestGenFitness;
             bestSolution = bestGenSolution;
-            std::cout << "Generation " << generation << " New best solution " << bestFitness << std::endl;
-            std::cout << "Knapsack " << std::endl; 
-            knapsack.printSolution(bestSolution);
+            if (verbose){
+                std::cout << "Generation " << generation << " New best solution " << bestFitness << std::endl;
+                std::cout << "Knapsack " << std::endl; 
+                knapsack.printSolution(bestSolution);
+            }
         }
 
         std::vector<KnapsackGA::Solution> newPopulation;
@@ -140,6 +138,15 @@ std::pair<KnapsackGA::Solution, KnapsackGA::Solution> GeneticAlgorithm::solve(){
 
         population = newPopulation;
         bestLastGenSolution = bestGenSolution;
+        convergence.push_back(bestGenFitness);
+    }
+    if(log){
+        std::ofstream file("convergence.csv");
+        file << "generation,bestFitness\n";
+        for (int i=0; i < convergence.size(); i++)
+        {
+            file << i+1 << "," << convergence.at(i) << "\n";
+        }
     }
     return {bestSolution, bestLastGenSolution};
 }
